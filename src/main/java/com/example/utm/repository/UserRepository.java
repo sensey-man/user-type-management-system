@@ -2,23 +2,20 @@ package com.example.utm.repository;
 
 import com.example.utm.dto.dao.User;
 import com.example.utm.dto.enums.UserType;
-import org.skife.jdbi.v2.DBI;
-import org.skife.jdbi.v2.Handle;
-import org.skife.jdbi.v2.StatementContext;
-import org.skife.jdbi.v2.sqlobject.*;
-import org.skife.jdbi.v2.sqlobject.customizers.RegisterMapper;
-import org.skife.jdbi.v2.tweak.ResultSetMapper;
+import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.sqlobject.SqlObjectPlugin;
+import org.jdbi.v3.sqlobject.customizer.Bind;
+import org.jdbi.v3.sqlobject.customizer.BindBean;
+import org.jdbi.v3.sqlobject.statement.GetGeneratedKeys;
+import org.jdbi.v3.sqlobject.statement.SqlQuery;
+import org.jdbi.v3.sqlobject.statement.SqlUpdate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,7 +27,6 @@ public class UserRepository {
     private DataSource dataSource;
 
 
-    @RegisterMapper(UserMapper.class)
     interface UserSQLs {
 
         @SqlUpdate("Create table IF NOT EXISTS  Users (id varchar PRIMARY KEY, name varchar(32) NOT NULL, enable bool, type INTEGER NOT NULL);")
@@ -51,52 +47,65 @@ public class UserRepository {
 
         @SqlUpdate("UPDATE users SET enable = :enable, type = :type WHERE id = :id")
         @GetGeneratedKeys
-        Integer changeUserType(@Bind("id") UUID id, @Bind("type") Integer type, @Bind("enable") Boolean enable);
+        Boolean changeUserType(@Bind("id") UUID id, @Bind("type") Integer type, @Bind("enable") Boolean enable);
+
+        @SqlUpdate("DELETE FROM Users WHERE id = :id")
+        @GetGeneratedKeys
+        Boolean deleteUser(@Bind("id") UUID id);
 
     }
 
-    public static class UserMapper implements ResultSetMapper<User> {
+    private Jdbi getJdbi() {
 
-        @Override
-        public User map(int i, ResultSet r, StatementContext statementContext) throws SQLException {
+        Jdbi jdbi = Jdbi.create(dataSource);
+        jdbi.installPlugin(new SqlObjectPlugin());
+        jdbi.registerRowMapper(User.class, (r, ctx) -> {
             User bean = new User();
             bean.setId(UUID.fromString(r.getString("id")));
             bean.setName(r.getString("name"));
             bean.setEnable(r.getBoolean("enable"));
             bean.setType(UserType.from(r.getInt("type")));
             return bean;
-        }
-    }
+        });
 
-    private UserSQLs getUserSQLs() {
-        Connection conn = DataSourceUtils.getConnection(dataSource);
-        Handle handle = DBI.open(conn);
-        return handle.attach(UserSQLs.class);
+        return jdbi;
     }
 
     public Boolean createTable() {
-        var userSQLs = getUserSQLs();
-        return userSQLs.createTable();
+        var jdbi = getJdbi();
+
+        return jdbi.withExtension(UserSQLs.class, UserSQLs::createTable);
     }
 
     public User getUserById(UUID id) {
-        var userQLs = getUserSQLs();
-        return userQLs.getUserById(id);
+        var jdbi = getJdbi();
+
+        return jdbi.withExtension(UserSQLs.class, extension -> extension.getUserById(id));
     }
 
 
     public List<User> list() {
-        var userQLs = getUserSQLs();
-        return userQLs.list();
+        var jdbi = getJdbi();
+
+        return jdbi.withExtension(UserSQLs.class, UserSQLs::list);
     }
 
     public Boolean insert(User item) {
-        var userSQLs = getUserSQLs();
-        return userSQLs.insert(item);
+        var jdbi = getJdbi();
+
+        return jdbi.withExtension(UserSQLs.class, extension -> extension.insert(item));
     }
 
-    public Integer changeUserType(UUID userId, UserType type, Boolean enable) {
-        var userSQLs = getUserSQLs();
-        return userSQLs.changeUserType(userId, type.ordinal(), enable);
+    public void changeUserType(UUID userId, UserType type, Boolean enable) {
+        var jdbi = getJdbi();
+
+        jdbi.withExtension(UserSQLs.class, extension -> extension.changeUserType(userId, type.ordinal(), enable));
     }
+
+    public void deleteUser(UUID userId){
+        var jdbi = getJdbi();
+
+        jdbi.withExtension(UserSQLs.class, extension -> extension.deleteUser(userId));
+    }
+
 }

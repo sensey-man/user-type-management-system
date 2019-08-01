@@ -1,21 +1,18 @@
 package com.example.utm.repository;
 
 import com.example.utm.dto.dao.Passwords;
-import org.skife.jdbi.v2.DBI;
-import org.skife.jdbi.v2.Handle;
-import org.skife.jdbi.v2.StatementContext;
-import org.skife.jdbi.v2.sqlobject.*;
-import org.skife.jdbi.v2.sqlobject.customizers.RegisterMapper;
-import org.skife.jdbi.v2.tweak.ResultSetMapper;
+import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.sqlobject.SqlObjectPlugin;
+import org.jdbi.v3.sqlobject.customizer.Bind;
+import org.jdbi.v3.sqlobject.customizer.BindBean;
+import org.jdbi.v3.sqlobject.statement.GetGeneratedKeys;
+import org.jdbi.v3.sqlobject.statement.SqlQuery;
+import org.jdbi.v3.sqlobject.statement.SqlUpdate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,7 +22,7 @@ public class PasswordRepository {
     @Autowired
     private DataSource dataSource;
 
-    @RegisterMapper(PasswordsMapper.class)
+
     interface PasswordSQLs {
 
         @SqlUpdate("Create table IF NOT EXISTS  Passwords (userId varchar PRIMARY KEY, password varchar(32) , passwordA varchar(32), passwordB varchar(32), FOREIGN KEY (userId) REFERENCES Users(id));")
@@ -41,58 +38,65 @@ public class PasswordRepository {
 
         @SqlUpdate("UPDATE Passwords SET password = :password, passwordA = :passwordA, passwordB = :passwordB WHERE userId = :userId")
         @GetGeneratedKeys
-        Integer update(@BindBean Passwords u);
+        Boolean update(@BindBean Passwords u);
 
         @SqlQuery("SELECT * FROM Passwords WHERE userId = :userId")
         @GetGeneratedKeys
         Passwords getUserPasswords(@Bind("userId") UUID userId);
 
-
+        @SqlUpdate("DELETE FROM Passwords WHERE userId = :userId")
+        Boolean deleteUserPasswords(@Bind("userId") UUID userId);
 
     }
 
-    public static class PasswordsMapper implements ResultSetMapper<Passwords> {
-        @Override
-        public Passwords map(int i, ResultSet r, StatementContext statementContext) throws SQLException {
+    private Jdbi getJdbi() {
+        Jdbi jdbi = Jdbi.create(dataSource);
+        jdbi.installPlugin(new SqlObjectPlugin());
+        jdbi.registerRowMapper(Passwords.class, (r, ctx) -> {
             Passwords bean = new Passwords();
             bean.setUserId(UUID.fromString(r.getString("userId")));
             bean.setPassword(r.getString("password"));
             bean.setPasswordA(r.getString("passwordA"));
             bean.setPasswordB(r.getString("passwordB"));
             return bean;
-        }
-    }
 
-    private PasswordRepository.PasswordSQLs getPasswordSQLs() {
-        Connection conn = DataSourceUtils.getConnection(dataSource);
-        Handle handle = DBI.open(conn);
-        return handle.attach(PasswordRepository.PasswordSQLs.class);
+        });
+        return jdbi;
     }
 
     public Boolean createTable() {
-        PasswordRepository.PasswordSQLs passwordSQLs = getPasswordSQLs();
-        return passwordSQLs.createTable();
+        var jdbi = getJdbi();
+
+        return jdbi.withExtension(PasswordSQLs.class, PasswordSQLs::createTable);
     }
 
     public List<Passwords> list() {
-        PasswordRepository.PasswordSQLs passwordSQLs = getPasswordSQLs();
-        return passwordSQLs.list();
+        var jdbi = getJdbi();
+
+        return jdbi.withExtension(PasswordSQLs.class, PasswordSQLs::list);
     }
 
     public Boolean insert(Passwords item) {
-        PasswordRepository.PasswordSQLs passwordSQLs = getPasswordSQLs();
-        return passwordSQLs.insert(item);
+        var jdbi = getJdbi();
+
+        return jdbi.withExtension(PasswordSQLs.class, extension -> extension.insert(item));
     }
 
-    public Integer update(Passwords item) {
-        PasswordRepository.PasswordSQLs passwordSQLs = getPasswordSQLs();
-        return passwordSQLs.update(item);
+    public void update(Passwords item) {
+        var jdbi = getJdbi();
+
+        jdbi.withExtension(PasswordSQLs.class, extension -> extension.update(item));
     }
 
     public Passwords getUserPasswords(UUID userId) {
-        PasswordRepository.PasswordSQLs passwordSQLs = getPasswordSQLs();
-        return passwordSQLs.getUserPasswords(userId);
+        var jdbi = getJdbi();
+
+        return jdbi.withExtension(PasswordSQLs.class, extension -> extension.getUserPasswords(userId));
     }
 
+    public void deleteUserPassword(UUID userId){
+        var jdbi = getJdbi();
 
+        jdbi.withExtension(PasswordSQLs.class, extension -> extension.deleteUserPasswords(userId));
+    }
 }

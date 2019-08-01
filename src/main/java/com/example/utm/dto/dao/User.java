@@ -68,7 +68,7 @@ public class User implements Serializable {
         this.enable = enable;
     }
 
-    public UserType getTypeEnum() {
+    public UserType getTypeName() {
         return type;
     }
 

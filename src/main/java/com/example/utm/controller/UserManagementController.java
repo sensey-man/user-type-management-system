@@ -3,6 +3,8 @@ package com.example.utm.controller;
 
 import com.example.utm.dto.rest.request.AddUserRequestDto;
 import com.example.utm.dto.rest.request.ChangeUserTypeRequestDto;
+import com.example.utm.dto.rest.request.DeleteUserRequestDto;
+import com.example.utm.dto.rest.request.SetUserPasswordRequestDto;
 import com.example.utm.dto.rest.response.ResultDto;
 import com.example.utm.service.processing.UserProcessorService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.UUID;
+
+// TODO extend API response codes with correct interpretation and msg
 
 @Controller
 @RequestMapping("/api/user/management/")
@@ -50,12 +54,32 @@ public class UserManagementController {
     }
 
     @RequestMapping(value = "change-user-type", method = RequestMethod.POST)
-    public ResponseEntity<ResultDto<Boolean>> changeUserType(@RequestBody ChangeUserTypeRequestDto requestDto){
+    public ResponseEntity<ResultDto<Boolean>> changeUserType(@RequestBody ChangeUserTypeRequestDto requestDto) {
         var res = userProcessorService.changeUserType(requestDto);
-        if(res.getData()){
+        if (res.getData()) {
             return ResponseEntity.ok(res);
         }
         return ResponseEntity.badRequest().body(res);
     }
 
+    @RequestMapping(value = "delete-user", method = RequestMethod.DELETE)
+    public ResponseEntity<ResultDto> deleteUser(@RequestBody DeleteUserRequestDto requestDto) {
+        var res = userProcessorService.deleteUser(requestDto);
+
+        if (res.getData()) {
+            return ResponseEntity.ok(res);
+        }
+        return ResponseEntity.unprocessableEntity().body(res);
+
+    }
+
+    @RequestMapping(value = "set-user-password", method = RequestMethod.POST)
+    public ResponseEntity<ResultDto<Boolean>> setUserPassword(@RequestBody SetUserPasswordRequestDto requestDto){
+        var res = userProcessorService.setUserPasswords(requestDto);
+
+        if (res.getData()) {
+            return ResponseEntity.ok(res);
+        }
+        return ResponseEntity.unprocessableEntity().body(res);
+    }
 }

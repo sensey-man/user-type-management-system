@@ -54,10 +54,23 @@ public class DbService {
 
     @Transactional
     public Boolean changeUserType(UUID userId, UserType type, Boolean enable, Passwords passwords) {
-        var okUser = userRepository.changeUserType(userId, type, enable);
-        var okPass = passwordRepository.update(passwords);
-        return okPass > 0 && okUser > 0;
+        // TODO add select from DB to check correct changes, because return answer not valid
+        userRepository.changeUserType(userId, type, enable);
+        passwordRepository.update(passwords);
+        return true; // TODO change by TODO label higher
     }
 
+    @Transactional
+    public Boolean deleteUser(UUID userId) {
+        // TODO add select from DB to check correct changes, because return answer not valid
+        passwordRepository.deleteUserPassword(userId);
+        userRepository.deleteUser(userId);
+        return true; // TODO change by TODO label higher
+    }
 
+    public Boolean setUserPassword(Passwords pass) {
+        // TODO add select from DB to check correct changes, because return answer not valid
+        passwordRepository.update(pass);
+        return true; // TODO change by TODO label higher
+    }
 }
