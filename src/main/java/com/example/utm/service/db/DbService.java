@@ -33,6 +33,7 @@ public class DbService {
 
     /**
      * Method get all users from DB
+     *
      * @return lits of user OR error message if it was not successful
      */
     @Transactional
@@ -45,9 +46,8 @@ public class DbService {
     }
 
     /**
-     *
      * @param user - dto to insert into DB
-     * @param p - dto of user password to insert into DB
+     * @param p    - dto of user password to insert into DB
      * @return true - if all success, else - error message
      */
     @Transactional
@@ -67,7 +67,6 @@ public class DbService {
     }
 
     /**
-     *
      * @param id - user id which use for sql request
      * @return - User dto if user was found, else - null
      */
@@ -81,7 +80,6 @@ public class DbService {
     }
 
     /**
-     *
      * @param id - User id to find it password in DB
      * @return Password dto, if it was found. Else - null
      */
@@ -96,10 +94,9 @@ public class DbService {
     }
 
     /**
-     *
-     * @param userId - User id in DB
-     * @param type - new user type
-     * @param enable - new state of account
+     * @param userId    - User id in DB
+     * @param type      - new user type
+     * @param enable    - new state of account
      * @param passwords - new password (different user type require different passwords)
      * @return - true, if changing was successful. False - if something went wrong
      */
@@ -137,7 +134,6 @@ public class DbService {
     }
 
     /**
-     *
      * @param userId - user id to find and delete record in DB (users and passwords tables)
      * @return True, if success, False - if something went wrong
      */
@@ -162,8 +158,7 @@ public class DbService {
     }
 
     /**
-     *
-     * @param u - just for logging if something will go wrong
+     * @param u    - just for logging if something will go wrong
      * @param pass - Password dto to setting it for user
      * @return True, if passwords were changed, else - false
      */

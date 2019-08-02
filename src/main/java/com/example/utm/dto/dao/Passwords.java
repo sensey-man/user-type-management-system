@@ -1,10 +1,12 @@
 package com.example.utm.dto.dao;
 
-import org.hibernate.validator.constraints.Length;
 import org.springframework.lang.Nullable;
+import org.springframework.validation.annotation.Validated;
 
+import javax.validation.constraints.Size;
 import java.util.UUID;
 
+@Validated
 public class Passwords {
 
     // CTORs
@@ -27,15 +29,15 @@ public class Passwords {
 
     private UUID userId;
 
-    @Length(max = 32)
+    @Size(max = 32, message = "Password greater than 32 symbols")
     @Nullable
     private String password = null;
 
-    @Length(max = 32)
+    @Size(max = 32, message = "PasswordA greater than 32 symbols")
     @Nullable
     private String passwordA = null;
 
-    @Length(max = 32)
+    @Size(max = 32, message = "PasswordB greater than 32 symbols")
     @Nullable
     private String passwordB = null;
 
@@ -104,9 +106,8 @@ public class Passwords {
     public boolean equals(Object obj) {
         var p = (Passwords) obj;
 
-        return p.getPassword() == password &&
-                p.getPasswordA() == passwordA &&
-                p.getPasswordB() == passwordB;
-
+        return ((p.getPassword() == null && password == null) || (p.getPassword() != null && password != null && p.getPassword().equals(password)))
+                && ((p.getPasswordA() == null && passwordA == null) || (p.getPasswordA() != null && passwordA != null && p.getPasswordA().equals(passwordA)))
+                && ((p.getPasswordB() == null && passwordB == null) || (p.getPasswordB() != null && passwordB != null && p.getPasswordB().equals(passwordB)));
     }
 }

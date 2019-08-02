@@ -13,6 +13,9 @@ public class SetUserPasswordRequestDto extends BaseRequestDto {
     @NonNull
     private Passwords passwords;
 
+    public SetUserPasswordRequestDto() {
+    }
+
     public SetUserPasswordRequestDto(UUID userId) {
         this.userId = userId;
     }

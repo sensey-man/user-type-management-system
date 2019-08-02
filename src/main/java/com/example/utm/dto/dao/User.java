@@ -4,6 +4,7 @@ import com.example.utm.dto.enums.UserType;
 import lombok.NonNull;
 import org.springframework.validation.annotation.Validated;
 
+import javax.validation.constraints.Size;
 import java.io.Serializable;
 import java.util.UUID;
 
@@ -33,6 +34,7 @@ public class User implements Serializable {
 
     private UUID id;
 
+    @Size(max = 32, message = "Size name field to large. Limit 32 symbols")
     private String name;
 
     private Boolean enable;
@@ -56,7 +58,7 @@ public class User implements Serializable {
         return name;
     }
 
-    public void setName(@NonNull String name) {
+    public void setName(@NonNull @Size(max = 32) @Validated String name) {
         this.name = name;
     }
 
@@ -80,4 +82,13 @@ public class User implements Serializable {
         this.type = type;
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        var u = (User) obj;
+
+        return u.getName().equals(this.getName()) &&
+                u.getType() == this.getType() &&
+                u.getEnable() == this.getEnable();
+
+    }
 }

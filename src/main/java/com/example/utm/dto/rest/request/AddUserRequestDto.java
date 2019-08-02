@@ -3,11 +3,8 @@ package com.example.utm.dto.rest.request;
 import com.example.utm.dto.dao.Passwords;
 import org.springframework.lang.Nullable;
 
-import javax.validation.constraints.Max;
-
 public class AddUserRequestDto extends BaseRequestDto {
 
-    @Max(32)
     private String name;
     private Boolean enable;
     private Integer type;

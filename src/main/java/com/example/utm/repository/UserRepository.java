@@ -34,7 +34,7 @@ public class UserRepository {
 
     interface UserSQLs {
 
-        @SqlUpdate("Create stable IF NOT EXISTS  Users (id varchar PRIMARY KEY, name varchar(32) NOT NULL, enable bool, type INTEGER NOT NULL);")
+        @SqlUpdate("Create table IF NOT EXISTS  Users (id varchar PRIMARY KEY, name varchar(32) NOT NULL, enable bool, type INTEGER NOT NULL);")
         @GetGeneratedKeys
         Boolean createTable();
 

@@ -13,10 +13,10 @@ import com.example.utm.service.db.DbService;
 import com.google.gson.Gson;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import javax.validation.ConstraintViolation;
+import java.util.*;
 
 import static com.example.utm.dto.enums.UserType.LOCAL;
 import static com.example.utm.dto.enums.UserType.SNMP;
@@ -31,6 +31,9 @@ public class UserProcessorService {
     @Autowired
     private Gson gson;
 
+    @Autowired
+    private LocalValidatorFactoryBean validator;
+
     /**
      * Method for saving new user into DB
      * At first need to check requested params by creating DAO obj
@@ -42,13 +45,35 @@ public class UserProcessorService {
      */
     public ResultDto<User> addUser(AddUserRequestDto requestDto) {
         User user;
-        try {
-            user = new User(requestDto.getName(), requestDto.getEnable(), UserType.from(requestDto.getType()));
-        } catch (Exception e) {
-            return new ResultDto<>(null, Collections.singletonList(new ErrorMessageDto(String.format(ERR_BAD_REQUEST_PARAMS, e.getMessage()))));
+        user = new User(requestDto.getName(), requestDto.getEnable(), UserType.from(requestDto.getType()));
+
+        // validate user request data
+        Set<ConstraintViolation<User>> userValidates = validator.validate(user);
+
+        if (userValidates.size() > 0) {
+
+            var errors = new ArrayList<ErrorMessageDto>();
+
+            userValidates.stream().map(v -> errors.add(new ErrorMessageDto(v.getMessage())));
+
+            return new ResultDto<>(null, errors);
         }
 
-        Passwords p = null;
+        // validate password request params
+        Set<ConstraintViolation<Passwords>> passValidates = validator.validate(requestDto.getPasswords());
+        if (passValidates.size() > 0) {
+
+            var errors = new ArrayList<ErrorMessageDto>();
+
+            userValidates.stream().map(v -> errors.add(new ErrorMessageDto(v.getMessage())));
+
+            return new ResultDto<>(null, errors);
+        }
+
+        // validations accept -> continue
+
+        Passwords p = new Passwords();
+        p.setUserId(user.getId());
         List<ErrorMessageDto> errors = null;
 
 
@@ -60,14 +85,10 @@ public class UserProcessorService {
                     if (user.getTypeName() == UserType.SNMP &&
                             requestDto.getPasswords().getPasswordA() != null && !requestDto.getPasswords().getPasswordA().isEmpty() &&
                             requestDto.getPasswords().getPasswordB() != null && !requestDto.getPasswords().getPasswordB().isEmpty()) {
-                        p = new Passwords();
-                        p.setUserId(user.getId());
                         p.setPasswordA(requestDto.getPasswords().getPasswordA());
                         p.setPasswordB(requestDto.getPasswords().getPasswordB());
 
                     } else if (user.getTypeName() == UserType.LOCAL && requestDto.getPasswords().getPassword() != null && !requestDto.getPasswords().getPassword().isEmpty()) {
-                        p = new Passwords();
-                        p.setUserId(user.getId());
                         p.setPassword(requestDto.getPasswords().getPassword());
                     } else {
                         errors = Collections.singletonList(new ErrorMessageDto(String.format(ERR_PASSWORD_NOT_SET, user.getId(), user.getTypeName())));
@@ -75,7 +96,13 @@ public class UserProcessorService {
                 } else {
                     errors = Collections.singletonList(new ErrorMessageDto(String.format(ERR_PASSWORD_NOT_SET, user.getId(), user.getTypeName())));
                 }
-
+                break;
+            case COMMUNITY:
+                var reqPas = requestDto.getPasswords();
+                if (reqPas.getPassword() != null || reqPas.getPasswordA() != null || reqPas.getPasswordB() != null) {
+                    errors = Collections.singletonList(new ErrorMessageDto(String.format(ERR_SET_PASSWORD_ILLEGAL, user.getId(), user.getTypeName(), user.getTypeName())));
+                }
+                break;
             default:
                 break;
         }
@@ -92,6 +119,7 @@ public class UserProcessorService {
             res.getErrors().add(new ErrorMessageDto(String.format(ERR_ADD_USER_ERROR, gson.toJson(requestDto))));
             return new ResultDto<>(user, res.getErrors());
         }
+
     }
 
     /**
@@ -176,6 +204,9 @@ public class UserProcessorService {
 
         try {
             var ok = dbService.changeUserType(user.getId(), newType, user.getEnable(), password);
+            if (!ok) {
+                return new ResultDto<>(false, Collections.singletonList(new ErrorMessageDto(String.format(ERR_SET_USER_PASSWORD, user.getId(), user.getType(), gson.toJson(password)))));
+            }
             return new ResultDto<>(ok, null);
         } catch (Exception e) {
             return new ResultDto<>(false, Collections.singletonList(new ErrorMessageDto(String.format(ERR_CONVET_TYPE_ERROR, user.getId(), user.getType(), newType))));
@@ -222,12 +253,13 @@ public class UserProcessorService {
         }
 
         var pass = requestDto.getPasswords();
+        pass.setUserId(user.getId());
         var success = false;
 
         switch (user.getTypeName()) {
             case COMMUNITY:
                 return new ResultDto<>(false, Collections.singletonList(new ErrorMessageDto(String.format(ERR_SET_PASSWORD_ILLEGAL, user.getId(), user.getType(), gson.toJson(requestDto.getPasswords())))));
-            case SNMP:
+            case LOCAL:
                 if (pass.getPassword() == null) {
                     return new ResultDto<>(false, Collections.singletonList(new ErrorMessageDto(String.format(ERR_SET_PASSWORD, user.getId(), user.getType(), gson.toJson(requestDto.getPasswords())))));
                 }
@@ -235,13 +267,17 @@ public class UserProcessorService {
                 pass.clearPasswordB();
                 success = dbService.setUserPassword(user, pass);
                 break;
-            case LOCAL:
+            case SNMP:
                 if (pass.getPasswordA() == null && pass.getPasswordB() == null) {
                     return new ResultDto<>(false, Collections.singletonList(new ErrorMessageDto(String.format(ERR_SET_PASSWORD, user.getId(), user.getType(), gson.toJson(requestDto.getPasswords())))));
                 }
                 pass.clearPassword();
                 success = dbService.setUserPassword(user, pass);
                 break;
+        }
+
+        if (!success) {
+            return new ResultDto<>(false, Collections.singletonList(new ErrorMessageDto(String.format(ERR_SET_USER_PASSWORD, user.getId(), user.getType(), gson.toJson(requestDto.getPasswords())))));
         }
 
         return new ResultDto<>(success, null);
