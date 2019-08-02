@@ -30,7 +30,7 @@ This is a test application for David.
 ### Nativ
 * run `mvn clean install` for build application jar file
 * run jar file using command `java -jar target/$(ls ./target | grep \.jar | grep -v original | grep -v javadoc | grep -v sources)`
-###Docker
+### Docker
 * run `docker build -t <name> .`. For example `docker build -t my-app .`
 * run `docker run -d -p 8080:8080 <name>`. For example `docker run -d -p 8080:8080 my-app`. For more information about docker commands and params, see [Docker documentation](https://docs.docker.com/engine/reference/run/)
 
