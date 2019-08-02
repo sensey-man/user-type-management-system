@@ -77,21 +77,36 @@ public class Passwords {
         this.passwordB = passwordB;
     }
 
-    public void clearPassword(){
+    public void clearPassword() {
         this.password = null;
     }
 
-    public void clearPasswordA(){
+    public void clearPasswordA() {
         this.passwordA = null;
     }
 
-    public void clearPasswordB(){
+    public void clearPasswordB() {
         this.passwordB = null;
     }
 
-    public void clearAllPasswords(){
+    public void clearAllPasswords() {
         this.clearPassword();
         this.clearPasswordA();
         this.clearPasswordB();
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        var p = (Passwords) obj;
+
+        return p.getPassword() == password &&
+                p.getPasswordA() == passwordA &&
+                p.getPasswordB() == passwordB;
+
     }
 }

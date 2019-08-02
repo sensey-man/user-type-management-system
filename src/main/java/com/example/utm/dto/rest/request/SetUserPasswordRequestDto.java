@@ -5,7 +5,7 @@ import lombok.NonNull;
 
 import java.util.UUID;
 
-public class SetUserPasswordRequestDto {
+public class SetUserPasswordRequestDto extends BaseRequestDto {
 
     @NonNull
     private UUID userId;

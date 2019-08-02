@@ -5,7 +5,7 @@ import org.springframework.lang.Nullable;
 
 import javax.validation.constraints.Max;
 
-public class AddUserRequestDto {
+public class AddUserRequestDto extends BaseRequestDto {
 
     @Max(32)
     private String name;

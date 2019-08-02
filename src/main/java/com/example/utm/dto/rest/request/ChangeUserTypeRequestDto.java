@@ -4,7 +4,7 @@ import lombok.NonNull;
 
 import java.util.UUID;
 
-public class ChangeUserTypeRequestDto {
+public class ChangeUserTypeRequestDto extends BaseRequestDto {
 
     @NonNull
     private UUID userId;
