@@ -11,7 +11,7 @@
 
     <groupId>com.example</groupId>
     <artifactId>user-type-management</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0.0.RELEASE</version>
     <name>user-type-management</name>
     <description>Spring Boot Project</description>
 
