@@ -3,6 +3,8 @@ target/
 !**/src/main/**
 !**/src/test/**
 *.sqlite
+/allure-results/
+
 ### STS ###
 .apt_generated
 .classpath
